@@ -19,6 +19,7 @@ OUT.mkdir(exist_ok=True)
 
 def main():
     per = {}
+    seen = set()
     for line in open(DATA / "sem_dofollow.jsonl"):
         try:
             r = json.loads(line)
@@ -27,6 +28,11 @@ def main():
         d = r.get("domain")
         if not d:
             continue
+        # 拉取端是 append-only(09-02 起翻页拉全量),封顶域重拉/中断续拉会有重复行,按来源+目标去重
+        key = (d, r.get("source_url"), r.get("anchor"), r.get("target_url"))
+        if key in seen:
+            continue
+        seen.add(key)
         per.setdefault(d, []).append({
             "u": r.get("source_url") or "",
             "s": (r.get("source_title") or "")[:60],
